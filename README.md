@@ -4,3 +4,4 @@ Projekt na 'Środowiska i Narzędzia  Wytwarzania Oprogramowania': 'Helper orgin
 
 Bot jest małym pomocnikiem dla organizacji swojego czasu, przypomnienia o wydarzeniach/spotkaniach, 
 organizacja wydarzeń/spotkań za pomocą wysłania wiadomości w Telegramie oraz drogą mailową.
+
