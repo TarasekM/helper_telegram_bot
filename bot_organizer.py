@@ -1,6 +1,4 @@
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
-                          ConversationHandler)
+from telegram.ext import Updater, CommandHandler
 
 import logging
 
