@@ -6,7 +6,7 @@ TOKEN_FILENAME = 'TOKEN.txt'
 
 def read_token(filename):
     with open(filename,'r') as file:
-        token = file.readline()[:-1]
+        token = file.readline().strip()
         return token
 
 def start(bot, update):
