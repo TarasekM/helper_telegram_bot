@@ -73,12 +73,12 @@ def new_event(bot, update, args, job_queue, chat_data):
             update.message.reply_text('Sorry we can not go back to future!')
             return
         
-        if name in chat_data:
-            update.message.reply_text(f'Updating \'{event_name}\' event')
-            event = chat_data[event_name]
-            event.schedule_removal()
-        event = job_queue.run_once(event_alarm, time_difference, context=[chat_id, timer_name])
-        chat_data[event_name] = event
+        #if name in chat_data:
+        #    update.message.reply_text(f'Updating \'{event_name}\' event')
+        #    event = chat_data[event_name]
+        #    event.schedule_removal()
+        #event = job_queue.run_once(event_alarm, time_difference, context=[chat_id, timer_name])
+        #chat_data[event_name] = event
         update.message.reply_text(f'Event {event_name} successfully set!')
 
     except IndexError:
@@ -97,7 +97,7 @@ def event_alarm(bot, job):
 
 def time_difference(time_now, time_future):
     #TODO
-    return 0
+    return 10
 
 
 def unset(bot, update, args, chat_data):
