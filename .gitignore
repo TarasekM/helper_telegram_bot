@@ -1,5 +1,5 @@
 bot_env
-telegram_env
+env
 .ipynb_checkpoints
 TOKEN.txt
 __pycache__
