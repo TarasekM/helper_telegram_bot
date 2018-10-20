@@ -3,3 +3,4 @@ env
 .ipynb_checkpoints
 TOKEN.txt
 __pycache__
+test.py
