@@ -1,6 +1,7 @@
 from telegram import ReplyKeyboardMarkup
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
                           ConversationHandler)
+from datetime import datetime
 
 import logging
 
@@ -15,8 +16,10 @@ def start(bot, update):
     update.message.reply_text('Hi! I\'m orginizer helper bot!')
     
 def help(bot, update):
-    update.message.reply_text('Currently you can use only this commands:\
-                              \n/set <seconds> <timer_name>(optional) - to set timer.')
+    update.message.reply_text('Currently you can use only this commands:\n\
+                              /set <seconds> <timer_name>(optional) - to set timer.\n\
+                              /new_event <hour "HH:MI:SS"> <date "DD-MM-YYYY"> \
+                              <event_name> - to create an new event')
 
 def alarm(bot, job):
     """Send the alarm message."""
@@ -42,6 +45,26 @@ def set_timer(bot, update, args, job_queue, chat_data):
             timer_name = args[1]
         except IndexError:
             timer_name = 'timer'
+        if timer_name in chat_data:
+            update.message.reply_text(f'Updating \'{timer_name}\' timer')
+            timer = chat_data[timer_name]
+            timer.schedule_removal()
+        timer = job_queue.run_once(alarm, due, context=[chat_id, timer_name])
+        chat_data[timer_name] = timer
+        update.message.reply_text(f'Timer \'{timer_name}\' successfully set!')
+
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /set <seconds> <timer_name>(optional)')
+        
+def new_event(bot, update, args, job_queue, chat_data):
+    """Add a job to the queue."""
+    chat_id = update.message.chat_id
+    try:
+        
+        hour = args[0]
+        time_now = datetime.now().time()
+        print(time_now)
+
         if timer_name in chat_data:
             update.message.reply_text(f'Updating \'{timer_name}\' timer')
             timer = chat_data[timer_name]
@@ -85,6 +108,12 @@ def main():
                                   pass_args=True,
                                   pass_job_queue=True,
                                   pass_chat_data=True))
+    
+    dispatcher.add_handler(CommandHandler("new_event", new_event,
+                                  pass_args=True,
+                                  pass_job_queue=True,
+                                  pass_chat_data=True))
+    
     dispatcher.add_handler(CommandHandler("unset", unset,
                                           pass_args=True,
                                           pass_chat_data=True))
