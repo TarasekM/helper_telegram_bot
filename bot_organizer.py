@@ -1,35 +1,30 @@
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
-                          ConversationHandler)
+from telegram.ext import Updater, CommandHandler
 from datetime import datetime
-
 import logging
 
 TOKEN_FILENAME = 'TOKEN.txt'
 
 def read_token(filename):
     with open(filename,'r') as file:
-        token = file.readline()
+        token = file.readline().strip()
         return token
 
 def start(bot, update):
-    update.message.reply_text('Hi! I\'m orginizer helper bot!')
+    update.message.reply_text('Hi! I\'m orginizer helper bot!\n'
+                              'Write /help to see all available commands.')
     
 def help(bot, update):
     update.message.reply_text('Currently you can use only this commands:\n'
-                             '/set <seconds> <timer_name>(optional) - to set timer.\n'
-                             '/new_event <hour "HH:MI:SS"> <date "YYYY-MM-DD">'
-                             '<event_name> - to create an new event')
-
-    #update.message.reply_text('Currently you can use only this commands:\
-    #                         \n/set <seconds> <timer_name>(optional) - to set timer.')
+                              '/set <seconds> <timer_name>(optional) - to set timer.\n'
+                              '/new_event <date "YYYY-MM-DD"> <time "HH:MI:SS">'
+                              '<event_name> - to create an new event')
     
 def alarm(bot, job):
     """Send the alarm message."""
     chat_id = job.context[0]
     try:
-        timer_name = job.context[1]
-        bot.send_message(chat_id, text=f'Beep: {timer_name}!')
+        job_name = job.context[1]
+        bot.send_message(chat_id, text=f'{job_name}!')
     except IndexError:
         bot.send_message(chat_id, text='Beep!')
 
@@ -45,7 +40,7 @@ def set_timer(bot, update, args, job_queue, chat_data):
         
         try:
             # args[1] should contain the name of the timer
-            timer_name = args[1]
+            timer_name = ' '.join(args[1:])
         except IndexError:
             timer_name = 'timer'
         if timer_name in chat_data:
@@ -55,7 +50,6 @@ def set_timer(bot, update, args, job_queue, chat_data):
         timer = job_queue.run_once(alarm, due, context=[chat_id, timer_name])
         chat_data[timer_name] = timer
         update.message.reply_text(f'Timer \'{timer_name}\' successfully set!')
-
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <seconds> <timer_name>(optional)')
         
@@ -63,68 +57,50 @@ def new_event(bot, update, args, job_queue, chat_data):
     """Add a job to the queue."""
     chat_id = update.message.chat_id
     try:
-        time = args[0]
-        date = args[1]
-        event_name = ' '.join(args[2:])
-        time_now = str(datetime.now().time().replace(microsecond=0))
-        date_now = str(datetime.now().date())
-        
-        if time_now > time or date_now > date:
-            update.message.reply_text('Sorry we can not go back to future!')
-            return
-        
-        #if name in chat_data:
-        #    update.message.reply_text(f'Updating \'{event_name}\' event')
-        #    event = chat_data[event_name]
-        #    event.schedule_removal()
-        #event = job_queue.run_once(event_alarm, time_difference, context=[chat_id, timer_name])
-        #chat_data[event_name] = event
-        update.message.reply_text(f'Event {event_name} successfully set!')
-
-    except IndexError:
-        update.message.reply_text('Usage: /new_event <hour "HH:MI:SS"> <date "YYYY-MM-DD">'
-                        '<event_name>')
-
-def event_alarm(bot, job):
-    """Send the alarm message."""
-    #TODO
-    chat_id = job.context[0]
-    try:
-        event_name = job.context[1]
-        bot.send_message(chat_id, text=f'Beep: {event_name}!')
-    except IndexError:
-        bot.send_message(chat_id, text='Beep!')
-
-def time_difference(time_now, time_future):
-    #TODO
-    return 10
-
+        date = args[0]
+        time = args[1]
+        event_date = datetime.strptime(' '.join((date, time)), '%Y-%m-%d %H:%M:%S')
+    except (IndexError, ValueError):
+        update.message.reply_text('Usage: /new_event <date "YYYY-MM-DD">'
+                                  '<time "HH:MI:SS"> <event_name>')
+    if event_date < datetime.now():
+        update.message.reply_text('Sorry we can not go back to future!')
+        return
+    event_name = ' '.join(args[2:])
+    if event_name in chat_data:
+        update.message.reply_text(f'Updating \'{event_name}\' event')
+        event = chat_data[event_name]
+        event.schedule_removal()
+    event = job_queue.run_once(alarm, when=event_date, context=[chat_id, event_name])
+    chat_data[event_name] = event
+    update.message.reply_text(f'Event {event_name} successfully set!')
 
 def unset(bot, update, args, chat_data):
     """Remove the job if the user changed their mind."""
     try:
-        timer_name = args[0]
+        job_name = ' '.join(args[0:])
     except IndexError:
-        timer_name = 'timer'
+        job_name = 'timer'
         
-    if timer_name not in chat_data:
-        update.message.reply_text(f'You have no active {timer_name}.')
+    if job_name not in chat_data:
+        update.message.reply_text(f'You have no active {job_name}.')
         return
     
-    timer = chat_data[timer_name]
-    timer.schedule_removal()
-    del chat_data[timer_name]
+    job = chat_data[job_name]
+    job.schedule_removal()
+    del chat_data[job]
 
-    update.message.reply_text(f'{timer_name.capitalize()} successfully unset!')
+    update.message.reply_text(f'{job_name.capitalize()} successfully unset!')
 
 
 def error(bot, update, error):
     """Log Errors caused by Updates."""
     logger.warning('Update "%s" caused error "%s"', update, error)
-    
+
 def main():
     updater = Updater(read_token(TOKEN_FILENAME))
     dispatcher = updater.dispatcher
+    
     dispatcher.add_handler(CommandHandler('start', start))
     dispatcher.add_handler(CommandHandler('help', help))
     dispatcher.add_handler(CommandHandler("set", set_timer,
