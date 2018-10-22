@@ -15,19 +15,17 @@ def start(bot, update):
                               'Write /help to see all available commands.')
     
 def help(bot, update):
-    update.message.reply_text('Currently you can use only this commands:\n'
-                              '/set <seconds> <timer_name>(optional) - to set timer.\n'
+    update.message.reply_text('Currently you can use only:\n'
+                              '/set <seconds> [timer_name] [timer_message] - to set timer.\n'
                               '/new_event <date "YYYY-MM-DD"> <time "HH:MI:SS">'
-                              '<event_name> - to create an new event')
+                              '<event_name> [event_message]- to create an new event')
     
 def alarm(bot, job):
     """Send the alarm message."""
     chat_id = job.context[0]
-    try:
-        job_name = job.context[1]
-        bot.send_message(chat_id, text=f'{job_name}!')
-    except IndexError:
-        bot.send_message(chat_id, text='Beep!')
+    job_name = job.context[1]
+    job_message = job.context[2]
+    bot.send_message(chat_id, text=f'{job_name}: {job_message}')
 
 def set_timer(bot, update, args, job_queue, chat_data):
     """Add a job to the queue."""
@@ -38,21 +36,29 @@ def set_timer(bot, update, args, job_queue, chat_data):
         if due < 0:
             update.message.reply_text('Sorry we can not go back to future!')
             return
-        
-        try:
-            # args[1] should contain the name of the timer
-            timer_name = ' '.join(args[1:])
-        except IndexError:
-            timer_name = 'timer'
-        if timer_name in chat_data:
-            update.message.reply_text(f'Updating \'{timer_name}\' timer')
-            timer = chat_data[timer_name]
-            timer.schedule_removal()
-        timer = job_queue.run_once(alarm, due, context=[chat_id, timer_name])
-        chat_data[timer_name] = timer
-        update.message.reply_text(f'Timer \'{timer_name}\' successfully set!')
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <seconds> <timer_name>(optional)')
+        update.message.reply_text('Usage: /set <seconds> [timer_name] [timer_message]') 
+        
+    try:
+        # args[1] should contain the name of the timer
+        timer_name = args[1]
+    except IndexError:
+        timer_name = 'timer'
+        
+    if args[2:]:
+        timer_message = ' '.join(args[2:])
+    else:
+        timer_message = 'beep!'
+        
+    if timer_name in chat_data:
+        update.message.reply_text(f'Updating \'{timer_name}\' timer')
+        timer = chat_data[timer_name]
+        timer.schedule_removal()
+        
+    timer = job_queue.run_once(alarm, due, context=[chat_id, timer_name, timer_message])
+    chat_data[timer_name] = timer
+    update.message.reply_text(f'Timer \'{timer_name}\' successfully set!')
+    
         
 def new_event(bot, update, args, job_queue, chat_data):
     """Add a job to the queue."""
@@ -61,18 +67,22 @@ def new_event(bot, update, args, job_queue, chat_data):
         date = args[0]
         time = args[1]
         event_date = datetime.strptime(' '.join((date, time)), '%Y-%m-%d %H:%M:%S')
+        if event_date < datetime.now():
+            update.message.reply_text('Sorry we can not go back to future!')
+            return
+        event_name = args[2]
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /new_event <date "YYYY-MM-DD">'
-                                  '<time "HH:MI:SS"> <event_name>')
-    if event_date < datetime.now():
-        update.message.reply_text('Sorry we can not go back to future!')
-        return
-    event_name = ' '.join(args[2:])
+                                  '<time "HH:MI:SS"> <event_name> [event_message]')
+    if args[3:]:
+        event_message = ' '.join(args[3:])
+        
     if event_name in chat_data:
         update.message.reply_text(f'Updating \'{event_name}\' event')
         event = chat_data[event_name]
         event.schedule_removal()
-    event = job_queue.run_once(alarm, when=event_date, context=[chat_id, event_name])
+        
+    event = job_queue.run_once(alarm, when=event_date, context=[chat_id, event_name, event_message])
     chat_data[event_name] = event
     update.message.reply_text(f'Event {event_name} successfully set!')
 
