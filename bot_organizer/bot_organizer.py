@@ -1,14 +1,72 @@
-from telegram.ext import Updater, CommandHandler
-from datetime import datetime
-
 import logging
+from datetime import datetime
+from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
+from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
+                          ConversationHandler)
 
-TOKEN_FILENAME = 'TOKEN.txt'
+TOKEN_FILENAME = '../TOKEN.txt'
+EVENT_NAME, EVENT_DATE, EVENT_LOC, EVENT_MSG = range(4)
 
 def read_token(filename):
     with open(filename,'r') as file:
         token = file.readline().strip()
         return token
+
+def event(bot, update):
+    update.message.reply_text('Ok.Let\'s create new event!\n'
+                              'Send /cancel to cancel the command.\n'
+                              'Enter the name of the event you want me to write down:')
+    return EVENT_NAME
+
+def event_name(bot, update):
+    user = update.message.from_user
+    logger.info(f'{user.first_name}\'s event name: {update.message.text}')
+    update.message.reply_text('Ok. Now, please, enter the date and time of the {update.message.text}\n'
+                              'Please, enter it in the "YYYY-MM-DD HH:MI:SS" format!')
+    return EVENT_DATE
+
+
+def event_date(bot, update):
+    user = update.message.from_user
+    logger.info(f'{user.first_name}\'s event date: {update.message.text}')
+    update.message.reply_text('Done! Now send me the location of the event or /skip:\n')
+    return EVENT_LOC
+
+
+def skip_event_loc(bot, update):
+    user = update.message.from_user
+    logger.info(f'{user.first_name} did not send a location of the event.')
+    update.message.reply_text('Ok! Now send me the message you want me to send '
+                              'to you as a reminder for the event or /skip:\n')
+    return EVENT_MSG
+
+
+def event_loc(bot, update):
+    user = update.message.from_user
+    logger.info(f'{user.first_name}\'s location of the event: {update.message.text}')
+    update.message.reply_text('Ok! I\'ve writen down location of the event!\n'
+                              'Now send me the message you want me to send you'
+                              'as a reminder for the event or /skip:\n')
+    return EVENT_MSG
+
+def skip_event_msg(bot, update):
+    user = update.message.from_user
+    logger.info(f'{user.first_name} did not send a message for the event.')
+    update.message.reply_text('Done! I wrote down all the info about the event!')
+    return ConversationHandler.END
+
+def event_msg(bot, update):
+    user = update.message.from_user
+    logger.info(f'{user.first_name}\'s message for the event:\n {update.message.text}')
+    update.message.reply_text('Done! I wrote down all the info about the event!')
+
+    return ConversationHandler.END
+
+def cancel(bot, update):
+    user = update.message.from_user
+    logger.info("User %s canceled the new event.", user.first_name)
+    update.message.reply_text('Ok, I canceled the new event entry!')
+    return ConversationHandler.END
 
 def start(bot, update):
     update.message.reply_text('Hi! I\'m orginizer helper bot!\n'
@@ -101,7 +159,7 @@ def unset(bot, update, args, chat_data):
     job.schedule_removal()
     del chat_data[job]
 
-    update.message.reply_text(f'{job_name.capitalize()} successfully unset!')
+    update.message.reply_text(f'{job_name} successfully unset!')
 
 
 def error(bot, update, error):
@@ -128,6 +186,23 @@ def main():
                                           pass_args=True,
                                           pass_chat_data=True))
 
+    
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('event', event)],
+
+        states={
+            EVENT_NAME: [MessageHandler(Filters.text, event_name)],
+            EVENT_DATE: [MessageHandler(Filters.text, event_date)],
+            EVENT_LOC: [MessageHandler(Filters.text, event_loc),
+                        CommandHandler('skip', skip_event_loc)],
+            EVENT_MSG: [MessageHandler(Filters.text, event_msg),
+                        CommandHandler('skip', skip_event_msg)]
+        },
+
+        fallbacks=[CommandHandler('cancel', cancel)]
+    )
+
+    dispatcher.add_handler(conv_handler)
     # log all errors
     dispatcher.add_error_handler(error)
 
