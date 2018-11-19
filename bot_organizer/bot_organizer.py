@@ -21,8 +21,8 @@ MSG = 'message'
 
 JOB_STR_END = '_job'
 
-start_reply_keyboard = [['/event','/timer'], ['/help']]
-start_markup = ReplyKeyboardMarkup(start_reply_keyboard, one_time_keyboard=True)
+start_reply_keyboard = [['/event','/timer'], ['/cancel','/help']]
+start_markup = ReplyKeyboardMarkup(start_reply_keyboard, one_time_keyboard=False)
 
 def read_token(filename):
     with open(filename,'r') as file:
@@ -144,19 +144,23 @@ def set_event(update, job_queue, chat_data):
         update.message.reply_text(f'Updating \'{event_name}\' entry')
         event_job = chat_data[event_job_name]
         event_job.schedule_removal()
-    
-    event_job = job_queue.run_once(alarm, when=chat_data[LEE][DATE],
-                                   context=[
-                                       update.message.chat_id,
-                                       event_name, 
-                                       event_notif_str(chat_data[LEE])
-                                   ]
-                                  )
-    chat_data[event_job_name] = event_job
-    logger.info(f'{user.first_name} set up new event {chat_data[LEE][NAME]}!')
-    update.message.reply_text(f'Event {chat_data[LEE][NAME]} successfully set!')    
+
+    if chat_data[LEE][DATE] > datetime.now():
+        event_job = job_queue.run_once(alarm, when=chat_data[LEE][DATE],
+                                       context=[
+                                           update.message.chat_id,
+                                           event_name, 
+                                           event_notif_str(chat_data[LEE])
+                                       ]
+                                      )
+        chat_data[event_job_name] = event_job
+        logger.info(f'{user.first_name} set up new event {chat_data[LEE][NAME]}!')
+        update.message.reply_text(f'Event {chat_data[LEE][NAME]} successfully set!')    
+    else:
+        update.message.reply_text('Sorry we can not go back to future!')
+
     del chat_data[LEE]
-    
+            
 def event_notif_str(event_dict):
     """Function to build event notification string."""
     notif = ''.join(('Event: ', event_dict[NAME]))
@@ -353,7 +357,8 @@ def main():
                                        pass_job_queue=True, pass_chat_data=True)]
         },
 
-        fallbacks=[CommandHandler('cancel', cancel_event)]
+        fallbacks=[CommandHandler('cancel', cancel_event),
+                   CommandHandler('event', event, pass_chat_data=True)]
     )
     
     dispatcher.add_handler(conv_handler)
