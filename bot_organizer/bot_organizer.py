@@ -11,6 +11,8 @@ TOKEN_FILENAME = 'TOKEN.txt' # replace with the path to the file with token to y
 
 EVENT_NAME, EVENT_DATE, EVENT_LOC, EVENT_MSG = range(4)
 
+TIMER_NAME, TIMER_DUE, TIMER_MSG = range(4,7)
+
 LEE = 'last_event_entry'
 LTE = 'last_timer_entry'
 NAME = 'name'
@@ -129,6 +131,14 @@ def cancel_event(bot, update):
     return ConversationHandler.END
 #--------------------------------------------------------------------------------
 # End of the code block for the event conversation handler.
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# Code block for the timer conversation handler.
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# End of the code block for the timer conversation handler.
 #--------------------------------------------------------------------------------
 
 #--------------------------------------------------------------------------------
@@ -344,8 +354,10 @@ def main():
                                           pass_chat_data=True))
     
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('event', event, pass_chat_data=True)],
-
+        entry_points=[CommandHandler('event', event, pass_chat_data=True),
+                      CommandHandler('timer',set_timer, pass_chat_data=True)
+                      ],
+        
         states={
             EVENT_NAME: [MessageHandler(Filters.text, event_name, pass_chat_data=True)],
             EVENT_DATE: [MessageHandler(Filters.text, event_date, pass_chat_data=True)],
