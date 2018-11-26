@@ -143,7 +143,7 @@ def timer(bot, update, chat_data):
     print(chat_data)
     update.message.reply_text('Ok.Let\'s create new timer!\n'
                               'Send /cancel to cancel the command.\n'
-                              'Enter the name of the timer\n:')
+                              'Enter the name of the timer:')
     return TIMER_NAME
 
 def timer_name(bot, update, chat_data):
@@ -162,8 +162,12 @@ def timer_due(bot, update, chat_data):
     user = update.message.from_user
 
     try:
-        timer_due = datetime.strptime(update.message.text.strip(),
-                                       '%H:%M:%S')
+        
+        timer_due = update.message.text.strip().split(":")
+        if len(timer_due) != 3:
+            raise ValueError
+        timer_due = int(timer_due[0]) * 3600 + int(timer_due[1]) * 60 + int(timer_due[2])
+        
     except ValueError:
         logger.info(f'{user.first_name}\'s {chat_data[LTE][NAME]} '
                     f'entered wrong due: {update.message.text}')
@@ -171,7 +175,7 @@ def timer_due(bot, update, chat_data):
                                   '"HH:MI:SS" format!')
         return TIMER_MSG
     
-    chat_data[LTE][DATE] = timer_due
+    chat_data[LTE][DUE] = timer_due
     logger.info(f'{user.first_name}\'s {chat_data[LTE][NAME]} due: {timer_due}')
     update.message.reply_text('Done! Now send me the message you want me to send you'
                               'as a reminder for the event or /skip:\n')
@@ -423,7 +427,7 @@ def main():
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('event', event, pass_chat_data=True),
-                      CommandHandler('timer',set_timer, pass_chat_data=True)
+                      CommandHandler('timer',timer, pass_chat_data=True)
                       ],
         
         states={
@@ -434,11 +438,19 @@ def main():
             EVENT_MSG: [MessageHandler(Filters.text, event_msg,
                                        pass_job_queue=True, pass_chat_data=True),
                         CommandHandler('skip', skip_event_msg, 
-                                       pass_job_queue=True, pass_chat_data=True)]
+                                       pass_job_queue=True, pass_chat_data=True)],
+            TIMER_NAME: [MessageHandler(Filters.text, timer_name, pass_chat_data=True)],
+            TIMER_DUE:[MessageHandler(Filters.text, timer_due, pass_chat_data=True)],
+            TIMER_MSG: [MessageHandler(Filters.text, timer_msg,
+                                       pass_job_queue=True, pass_chat_data=True),
+            CommandHandler('skip', skip_timer_msg,
+                           pass_job_queue=True, pass_chat_data=True)]
         },
 
         fallbacks=[CommandHandler('cancel', cancel_event),
-                   CommandHandler('event', event, pass_chat_data=True)]
+                   CommandHandler('event', event, pass_chat_data=True),
+                   CommandHandler('timer', timer, pass_chat_data=True)
+                   ]
     )
     
     dispatcher.add_handler(conv_handler)
