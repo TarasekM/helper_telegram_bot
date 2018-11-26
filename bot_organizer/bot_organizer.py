@@ -136,6 +136,74 @@ def cancel_event(bot, update):
 #--------------------------------------------------------------------------------
 # Code block for the timer conversation handler.
 #--------------------------------------------------------------------------------
+def timer(bot, update, chat_data):
+    """New timer entry start function"""
+    chat_data[LTE] = {NAME: None, DUE: None,
+                      MSG: None}
+    print(chat_data)
+    update.message.reply_text('Ok.Let\'s create new timer!\n'
+                              'Send /cancel to cancel the command.\n'
+                              'Enter the name of the timer\n:')
+    return TIMER_NAME
+
+def timer_name(bot, update, chat_data):
+    """Function to save timer name and ask for timer due
+    in the timer conversation.
+    """
+    user = update.message.from_user
+    chat_data[LTE][NAME] = update.message.text
+    logger.info(f'{user.first_name}\'s timer name: {update.message.text}')
+    update.message.reply_text(f'Ok. Now, please, enter the due of the timer:'
+                              ' "HH:MI:SS" format!')
+    return TIMER_DUE
+
+def timer_due(bot, update, chat_data):
+    """Function to save timer due and ask for timer message."""
+    user = update.message.from_user
+
+    try:
+        timer_due = datetime.strptime(update.message.text.strip(),
+                                       '%H:%M:%S')
+    except ValueError:
+        logger.info(f'{user.first_name}\'s {chat_data[LTE][NAME]} '
+                    f'entered wrong due: {update.message.text}')
+        update.message.reply_text('Please, enter due in the '
+                                  '"HH:MI:SS" format!')
+        return TIMER_MSG
+    
+    chat_data[LTE][DATE] = timer_due
+    logger.info(f'{user.first_name}\'s {chat_data[LTE][NAME]} due: {timer_due}')
+    update.message.reply_text('Done! Now send me the message you want me to send you'
+                              'as a reminder for the event or /skip:\n')
+
+    return TIMER_MSG
+
+def timer_msg(bot, update, job_queue, chat_data):
+    """Function to save timer message and set up timer."""
+    user = update.message.from_user
+    logger.info(f'{user.first_name}\'s message for the {chat_data[LTE][NAME]}:'
+                '\n {update.message.text}')
+    chat_data[LTE][MSG] = update.message.text
+    update.message.reply_text('Done! I wrote down all the info about the timer!')
+    
+    set_timer(update, job_queue, chat_data)
+    return ConversationHandler.END
+
+def skip_timer_msg(bot, update, job_queue, chat_data):
+    """Function to handle timer message skip and set up timer."""
+    user = update.message.from_user
+    logger.info(f'{user.first_name} did not send a message for the timer.')
+    update.message.reply_text('Done! I wrote down all the info about the timer!')
+    
+    set_timer(update, job_queue, chat_data)
+    return ConversationHandler.END
+
+def cancel_timer(bot, update):
+    """Function to handle new timer entry cancel"""
+    user = update.message.from_user
+    logger.info(f'User {user.first_name} canceled the new timer.')
+    update.message.reply_text('Ok, I canceled the new timer entry!')
+    return ConversationHandler.END
 
 #--------------------------------------------------------------------------------
 # End of the code block for the timer conversation handler.
