@@ -5,3 +5,5 @@ TOKEN.txt
 __pycache__
 test.py
 .vscode/**
+.pytest_cache
+*.pyc
