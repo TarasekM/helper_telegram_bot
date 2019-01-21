@@ -18,6 +18,8 @@ DUE = 'due'
 DATE = 'date'
 LOC = 'location'
 MSG = 'message'
+FIELDS = {LEE: {NAME, DATE, LOC, MSG},
+          LTE: {NAME, DUE, MSG}}
 DATE_FORMAT = '%Y-%m-%d'
 TIME_FORMAT = '%H:%M:%S'
 DATE_TIME_FORMAT = ' '.join((DATE_FORMAT, TIME_FORMAT))
@@ -25,7 +27,6 @@ JOB_STR_END = '_job'
 
 start_reply_keyboard = [['/event','/timer'], ['/cancel','/help']]
 start_markup = ReplyKeyboardMarkup(start_reply_keyboard, one_time_keyboard=False)
-logger = None
 
 def get_logger():
     return logging.getLogger(__name__)
@@ -301,6 +302,7 @@ def new_timer(_bot, update, args, job_queue, chat_data):
     except IndexError:
         timer_name = 'timer'
 
+    # check for only mandatory argument - timer due 
     try:
         # args[0] should contain the time for the timer in seconds
         timer_due = int(args[0])

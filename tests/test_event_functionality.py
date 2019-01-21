@@ -1,5 +1,6 @@
 from bot_organizer import bot_organizer as bo
 
+
 class TestEventHandlers:
 
     def test_event(self, bot, update, event_chat_data, get_logger):
@@ -80,18 +81,23 @@ class TestEventHandlers:
 
 class TestOneMessageEventHandler():
 
-    def test_new_event(self, bot, update, good_one_msg_event_args, 
-                       job_queue, get_logger, set_event):
+    def test_good_new_event(self, bot, update, good_event_args, 
+                            job_queue, set_event):
         chat_data = dict()
-        bo.new_event(bot, update, good_one_msg_event_args,
+        bo.new_event(bot, update, good_event_args,
                     job_queue, chat_data)
         assert bo.LEE in chat_data
-        assert bo.NAME in chat_data[bo.LEE]
-        assert bo.DATE in chat_data[bo.LEE]
-        assert bo.LOC in chat_data[bo.LEE]
-        assert bo.MSG in chat_data[bo.LEE]
+        for field in bo.FIELDS[bo.LEE]:
+            assert field in chat_data[bo.LEE]
         set_event.assert_called_once_with(update, job_queue, chat_data)
 
+    def test_bag_new_event(self, bot, update, bad_event_args,
+                           job_queue, get_logger, set_event):
+        chat_data = dict()
+        bo.new_event(bot, update, bad_event_args,
+                     job_queue, chat_data)
+        assert bo.LEE not in chat_data
+        get_logger.error.assert_called_once()
 
 class TestEventSet():
 
@@ -100,6 +106,8 @@ class TestEventSet():
         bo.set_event(update, job_queue, good_event_chat_data)
         get_logger.info.assert_called_once()
         update.message.reply_text.assert_called_once()
+        job_queue.run_once.assert_called_once()
+        assert bo.LEE not in good_event_chat_data
 
     def test_bad_set_event(self, update, job_queue,
                            bad_event_chat_data, get_logger):

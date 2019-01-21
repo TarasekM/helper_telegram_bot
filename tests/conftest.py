@@ -2,8 +2,8 @@ import pytest
 from bot_organizer import bot_organizer as bo
 from datetime import datetime, timedelta
 
-@pytest.fixture
-def get_logger(mocker):
+@pytest.fixture(name='get_logger')
+def _get_logger(mocker):
     return mocker.patch('bot_organizer.bot_organizer.get_logger')()
 
 @pytest.fixture(name='bot', scope='module')
@@ -72,8 +72,8 @@ def _job_queue(mocker):
 def _set_event(mocker):
     return mocker.patch('bot_organizer.bot_organizer.set_event')
 
-@pytest.fixture(name='good_one_msg_event_args', scope='function')
-def _good_one_msg_event_args():
+@pytest.fixture(name='good_event_args', scope='function')
+def _good_event_args():
     args = []
     date_time = datetime.now() + timedelta(minutes=10)
     date = date_time.strftime(bo.DATE_FORMAT)
@@ -83,3 +83,46 @@ def _good_one_msg_event_args():
     name = 'TEST EVENT'
     args.append(name)
     return args
+
+
+@pytest.fixture(name='bad_event_args', scope='function')
+def _bad_event_args():
+    args = []
+    date_time = datetime.now() - timedelta(minutes=10)
+    date = date_time.strftime(bo.DATE_FORMAT)
+    args.append(date)
+    time = date_time.strftime(bo.TIME_FORMAT)
+    args.append(time)
+    name = 'TEST EVENT'
+    args.append(name)
+    return args
+
+@pytest.fixture(name='set_timer', scope='function')
+def _set_timer(mocker):
+    return mocker.patch('bot_organizer.bot_organizer.set_timer')
+
+@pytest.fixture(name='good_timer_args', scope='function')
+def _good_timer_args():
+    args = list()
+    args.append('15')
+    args.append('Timer name')
+    args.append('Timer message!')
+    return args
+
+
+@pytest.fixture(name='bad_timer_args', scope='function')
+def _bad_timer_args():
+    args = list()
+    args.append('-15')
+    args.append('Timer name')
+    args.append('Timer message!')
+    return args
+
+@pytest.fixture(name='good_timer_chat_data', scope='function')
+def _good_timer_chat_data():
+    data = dict()
+    data[bo.LTE] = dict()
+    data[bo.LTE][bo.NAME] = 'TEST LTE'
+    data[bo.LTE][bo.DUE] = '10'
+    data[bo.LTE][bo.MSG] = 'TEST MSG'
+    return data
