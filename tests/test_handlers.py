@@ -39,7 +39,3 @@ class TestEventHandlers:
     def test_event_loc(self, bot, update, event_chat_data, get_logger):
         assert bo.event_loc(bot, update, event_chat_data) == bo.EVENT_MSG
         get_logger.info.assert_called_once()
-        assert bo.LOC in event_chat_data[bo.LEE]
-        update.message.reply_text.assert_called_once()
-
-    

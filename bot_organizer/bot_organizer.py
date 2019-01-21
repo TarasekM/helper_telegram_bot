@@ -19,6 +19,7 @@ JOB_STR_END = '_job'
 
 start_reply_keyboard = [['/event','/timer'], ['/cancel','/help']]
 start_markup = ReplyKeyboardMarkup(start_reply_keyboard, one_time_keyboard=False)
+logger = None
 
 def get_logger():
     return logging.getLogger(__name__)
