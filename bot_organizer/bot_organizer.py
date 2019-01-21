@@ -1,14 +1,10 @@
-#!/usr/bin/python3
-#-*- coding: utf-8 -*-
-
 import logging
 from datetime import datetime
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
 from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, 
                           RegexHandler, ConversationHandler)
 
-TOKEN_FILENAME = 'TOKEN.txt' # replace with the path to the file with token to your bot
-
+TOKEN_FILENAME = 'TOKEN.txt' # replace with the path to the file with token to your _bot
 EVENT_NAME, EVENT_DATE, EVENT_LOC, EVENT_MSG = range(4)
 
 LEE = 'last_event_entry'
@@ -18,11 +14,12 @@ DUE = 'due'
 DATE = 'date'
 LOC = 'location'
 MSG = 'message'
-
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 JOB_STR_END = '_job'
 
 start_reply_keyboard = [['/event','/timer'], ['/cancel','/help']]
 start_markup = ReplyKeyboardMarkup(start_reply_keyboard, one_time_keyboard=False)
+logger = None
 
 def read_token(filename):
     with open(filename,'r') as file:
@@ -32,20 +29,27 @@ def read_token(filename):
 #--------------------------------------------------------------------------------
 # Code block for the event conversation handler.
 #--------------------------------------------------------------------------------
-def event(bot, update, chat_data):
-    """New event entry start function"""
+def event(_bot, update, chat_data):
+    """New event entry start function
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     chat_data[LEE] = {NAME: None, DATE: None,
                       LOC: None, MSG: None}
-    print(chat_data)
+    user = update.message.from_user
+    logger.info(f'{user.first_name} started new event entry.')
     update.message.reply_text('Ok.Let\'s create new event!\n'
                               'Send /cancel to cancel the command.\n'
                               'Enter the name of the event you want '
                               'me to write down:')
     return EVENT_NAME
 
-def event_name(bot, update, chat_data):
+def event_name(_bot, update, chat_data):
     """Function to save event name and ask for event date
     in the event conversation.
+    
+    
+    :param _bot: Not used, required only by telegram-bot api.
     """
     user = update.message.from_user
     chat_data[LEE][NAME] = update.message.text
@@ -56,19 +60,22 @@ def event_name(bot, update, chat_data):
     return EVENT_DATE
 
 
-def event_date(bot, update, chat_data):
-    """Function to save event date and ask for event location."""
+def event_date(_bot, update, chat_data):
+    """Function to save event date and ask for event location.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     user = update.message.from_user
 
     try:
         event_date = datetime.strptime(update.message.text.strip(),
-                                       '%Y-%m-%d %H:%M:%S')
+                                       DATE_FORMAT)
         if event_date < datetime.now():
             update.message.reply_text('Sorry we can not go back to future!')
             raise ValueError
     except ValueError:
-        logger.info(f'{user.first_name}\'s {chat_data[LEE][NAME]} '
-                    f'entered wrong date: {update.message.text}')
+        logger.error(f'{user.first_name}\'s {chat_data[LEE][NAME]} '
+                     f'entered wrong date: {update.message.text}')
         update.message.reply_text('Please, enter date in the '
                                   '"YYYY-MM-DD HH:MI:SS" format!')
         return EVENT_DATE
@@ -80,8 +87,11 @@ def event_date(bot, update, chat_data):
     return EVENT_LOC
 
 
-def skip_event_loc(bot, update):
-    """Function to handle even location skip"""
+def skip_event_loc(_bot, update):
+    """Function to handle event location skip
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     user = update.message.from_user
     logger.info(f'{user.first_name} did not send a location of the event.')
     update.message.reply_text('Ok! Now send me the message you want me to send '
@@ -89,8 +99,11 @@ def skip_event_loc(bot, update):
     return EVENT_MSG
 
 
-def event_loc(bot, update, chat_data):
-    """Function to save event location and ask for event message."""
+def event_loc(_bot, update, chat_data):
+    """Function to save event location and ask for event message.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     user = update.message.from_user
     logger.info(f'{user.first_name}\'s location of the {chat_data[LEE][NAME]}:'
                 f' {update.message.text}')
@@ -100,8 +113,11 @@ def event_loc(bot, update, chat_data):
                               'as a reminder for the event or /skip:\n')
     return EVENT_MSG
 
-def skip_event_msg(bot, update, job_queue, chat_data):
-    """Function to handle event message skip and set up event."""
+def skip_event_msg(_bot, update, job_queue, chat_data):
+    """Function to handle event message skip and set up event.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     user = update.message.from_user
     logger.info(f'{user.first_name} did not send a message for the event.')
     update.message.reply_text('Done! I wrote down all the info about the event!')
@@ -109,8 +125,11 @@ def skip_event_msg(bot, update, job_queue, chat_data):
     set_event(update, job_queue, chat_data)
     return ConversationHandler.END
 
-def event_msg(bot, update, job_queue, chat_data):
-    """Function to save event message and set up event."""
+def event_msg(_bot, update, job_queue, chat_data):
+    """Function to save event message and set up event.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     user = update.message.from_user
     logger.info(f'{user.first_name}\'s message for the {chat_data[LEE][NAME]}:'
                 '\n {update.message.text}')
@@ -121,8 +140,11 @@ def event_msg(bot, update, job_queue, chat_data):
     return ConversationHandler.END
 
    
-def cancel_event(bot, update):
-    """Function to handle new event entry cancel"""
+def cancel_event(_bot, update):
+    """Function to handle new event entry cancel
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     user = update.message.from_user
     logger.info(f'User {user.first_name} canceled the new event.')
     update.message.reply_text('Ok, I canceled the new event entry!')
@@ -208,13 +230,19 @@ def timer_notif_str(timer_dict):
 #--------------------------------------------------------------------------------
 
 
-def start(bot, update):
-    """Function for start command handler."""
-    update.message.reply_text('Hi! I\'m orginizer helper bot!\n'
+def start(_bot, update):
+    """Function for start command handler.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
+    update.message.reply_text('Hi! I\'m organizer helper bot!\n'
                               'Write /help to see all available commands.',
                               reply_markup=start_markup)
-def help(bot, update):
-    """Function for help command handler."""
+def help(_bot, update):
+    """Function for help command handler.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     update.message.reply_text('Currently you can use only:\n'
                               '/new_timer <seconds> [timer_name] [timer_message]'
                               ' - to set timer.\n'
@@ -224,18 +252,28 @@ def help(bot, update):
                               '/event to create new event using conversation'
                               ' handler.')
     
-def alarm(bot, job):
+def alarm(_bot, job):
     """Function to send alarm notification message to the user 
     who set up the event or timer.
     """
     chat_id = job.context[0]
     # job_event_name = job.context[1]
     job_message = job.context[2]
-    bot.send_message(chat_id, text=job_message)
+    _bot.send_message(chat_id, text=job_message)
 
-def new_timer(bot, update, args, job_queue, chat_data):
-    """Add a job with notification for the new timer to the queue."""
-    chat_id = update.message.chat_id
+def new_timer(_bot, update, args, job_queue, chat_data):
+    """Add a job with notification for the new timer to the queue.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
+    user = update.message.from_user
+
+    try:
+        # args[1] should contain the name of the timer
+        timer_name = args[1]
+    except IndexError:
+        timer_name = 'timer'
+        
     try:
         # args[0] should contain the time for the timer in seconds
         timer_due = int(args[0])
@@ -243,18 +281,16 @@ def new_timer(bot, update, args, job_queue, chat_data):
             update.message.reply_text('Sorry we can not go back to future!')
             raise ValueError
     except (IndexError, ValueError):
-        update.message.reply_text('Usage: /set <seconds> [timer_name] [timer_message]') 
+        logger.error(f'{user.first_name}\'s {timer_name} '
+                     f'entered wrong timer due: {update.message.text}')
+        update.message.reply_text('Usage: /new_timer <seconds> [timer_name] [timer_message]') 
         return
-    try:
-        # args[1] should contain the name of the timer
-        timer_name = args[1]
-    except IndexError:
-        timer_name = 'timer'
+   
     
     timer_msg = None
     if args[2:]:
         timer_msg = ' '.join(args[2:])
-    # adding info aboud event to chat data dict as 'last_event_entry'
+    # adding info aboud event to chat data dict as 'last_timer_entry'
     chat_data[LTE] = dict()
     chat_data[LTE][NAME] = timer_name
     chat_data[LTE][DUE] = timer_due
@@ -262,9 +298,11 @@ def new_timer(bot, update, args, job_queue, chat_data):
     # set up the job_queue notification for the event
     set_timer(update, job_queue, chat_data)
     
-def new_event(bot, update, args, job_queue, chat_data):
-    """Add a job with notification for the new event to the queue."""
-    chat_id = update.message.chat_id
+def new_event(_bot, update, args, job_queue, chat_data):
+    """Add a job with notification for the new event to the queue.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     # check mandatory arguments: event_date and event_name
     try:
         date = args[0]
@@ -298,8 +336,11 @@ def new_event(bot, update, args, job_queue, chat_data):
     # set up the job_queue notification for the event
     set_event(update, job_queue, chat_data)
 
-def unset(bot, update, args, chat_data):
-    """Remove the job if the user changed their mind."""
+def unset(_bot, update, args, chat_data):
+    """Remove the job if the user changed their mind.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     try:
         job_name = ''.join((args[0], JOB_STR_END))
     except IndexError:
@@ -314,13 +355,18 @@ def unset(bot, update, args, chat_data):
     del chat_data[job_name]
     update.message.reply_text(f'{job_name} successfully unset!')
 
-
-def error(bot, update, error):
-    """Log Errors caused by Updates."""
+def error(_bot, update, error):
+    """Log Errors caused by Updates.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     logger.warning(f'Update "{update}" caused error "{error}"')
 
-def unknown(bot, update):
-    """Function for unknown command handler."""
+def unknown(_bot, update):
+    """Function for unknown command handler.
+    
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     update.message.reply_text('Sorry, I didn\'t understand that command.')
     
 def main():
@@ -369,7 +415,7 @@ def main():
     updater.start_polling()
     # Block until you press Ctrl-C or the process receives SIGINT, SIGTERM or
     # SIGABRT. This should be used most of the time, since start_polling() is
-    # non-blocking and will stop the bot gracefully.
+    # non-blocking and will stop the _bot gracefully.
     updater.idle()
 
 if __name__=='__main__':
