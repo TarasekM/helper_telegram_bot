@@ -449,6 +449,7 @@ def help(_bot, update):
                               '<event_name> [event_loc] [event_msg]'
                               ' - to create an new event.\n'
                               '/event to create new event using conversation'
+                              ' handler.\n'
                               '/timer to create new timer using conversation'
                               ' handler.\n'
                               '/unset <name> to unset timer/event.')
@@ -529,7 +530,7 @@ def main():
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('event', event, pass_chat_data=True),
-                      CommandHandler('new_timer', timer, pass_chat_data=True)
+                      CommandHandler('timer', timer, pass_chat_data=True)
                       ],
 
         states={
@@ -552,7 +553,7 @@ def main():
 
         fallbacks=[CommandHandler('cancel', cancel_event),
                    CommandHandler('event', event, pass_chat_data=True),
-                   CommandHandler('new_timer', timer, pass_chat_data=True)
+                   CommandHandler('timer', timer, pass_chat_data=True)
                    ]
     )
     
