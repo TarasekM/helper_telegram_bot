@@ -172,6 +172,8 @@ def cancel_event(_bot, update):
 #--------------------------------------------------------------------------------
 # Code block for the timer conversation handler.
 #--------------------------------------------------------------------------------
+
+
 def timer(bot, update, chat_data):
     """New timer entry start function"""
     chat_data[LTE] = {NAME: None, DUE: None,
@@ -182,16 +184,18 @@ def timer(bot, update, chat_data):
                               'Enter the name of the timer:')
     return TIMER_NAME
 
+
 def timer_name(bot, update, chat_data):
     """Function to save timer name and ask for timer due
     in the timer conversation.
     """
     user = update.message.from_user
     chat_data[LTE][NAME] = update.message.text
-    logger.info(f'{user.first_name}\'s timer name: {update.message.text}')
+    get_logger().info(f'{user.first_name}\'s timer name: {update.message.text}')
     update.message.reply_text(f'Ok. Now, please, enter the due of the timer:'
                               ' "HH:MI:SS" format!')
     return TIMER_DUE
+
 
 def timer_due(bot, update, chat_data):
     """Function to save timer due and ask for timer message."""
@@ -205,23 +209,24 @@ def timer_due(bot, update, chat_data):
         timer_due = int(timer_due[0]) * 3600 + int(timer_due[1]) * 60 + int(timer_due[2])
 
     except ValueError:
-        logger.info(f'{user.first_name}\'s {chat_data[LTE][NAME]} '
+        get_logger().info(f'{user.first_name}\'s {chat_data[LTE][NAME]} '
                     f'entered wrong due: {update.message.text}')
         update.message.reply_text('Please, enter due in the '
                                   '"HH:MI:SS" format!')
         return TIMER_MSG
 
     chat_data[LTE][DUE] = timer_due
-    logger.info(f'{user.first_name}\'s {chat_data[LTE][NAME]} due: {timer_due}')
+    get_logger().info(f'{user.first_name}\'s {chat_data[LTE][NAME]} due: {timer_due}')
     update.message.reply_text('Done! Now send me the message you want me to send you'
                               'as a reminder for the event or /skip:\n')
 
     return TIMER_MSG
 
+
 def timer_msg(bot, update, job_queue, chat_data):
     """Function to save timer message and set up timer."""
     user = update.message.from_user
-    logger.info(f'{user.first_name}\'s message for the {chat_data[LTE][NAME]}:'
+    get_logger().info(f'{user.first_name}\'s message for the {chat_data[LTE][NAME]}:'
                 '\n {update.message.text}')
     chat_data[LTE][MSG] = update.message.text
     update.message.reply_text('Done! I wrote down all the info about the timer!')
@@ -229,19 +234,21 @@ def timer_msg(bot, update, job_queue, chat_data):
     set_timer(update, job_queue, chat_data)
     return ConversationHandler.END
 
+
 def skip_timer_msg(bot, update, job_queue, chat_data):
     """Function to handle timer message skip and set up timer."""
     user = update.message.from_user
-    logger.info(f'{user.first_name} did not send a message for the timer.')
+    get_logger().info(f'{user.first_name} did not send a message for the timer.')
     update.message.reply_text('Done! I wrote down all the info about the timer!')
 
     set_timer(update, job_queue, chat_data)
     return ConversationHandler.END
 
+
 def cancel_timer(bot, update):
     """Function to handle new timer entry cancel"""
     user = update.message.from_user
-    logger.info(f'User {user.first_name} canceled the new timer.')
+    get_logger().info(f'User {user.first_name} canceled the new timer.')
     update.message.reply_text('Ok, I canceled the new timer entry!')
     return ConversationHandler.END
 
@@ -252,6 +259,8 @@ def cancel_timer(bot, update):
 #--------------------------------------------------------------------------------
 # Setters for event and timer code block + notification generator code block
 #--------------------------------------------------------------------------------
+
+
 def set_event(update, job_queue, chat_data):
     """Function to set up event notification job."""
     event_name = chat_data[LEE][NAME]
@@ -295,6 +304,7 @@ def event_notif_str(event_dict):
 #------------------------------------------------------------------------------
 # One message event setting.
 #------------------------------------------------------------------------------
+
 
 def new_event(_bot, update, args, job_queue, chat_data):
     """Add a job with notification for the new event to the queue.
@@ -341,6 +351,7 @@ def new_event(_bot, update, args, job_queue, chat_data):
 # Setter for timer + notification generator code block
 #------------------------------------------------------------------------------
 
+
 def set_timer(update, job_queue, chat_data):
     """Function to set up new timer notification job."""
     timer_name = chat_data[LTE][NAME]
@@ -364,6 +375,7 @@ def set_timer(update, job_queue, chat_data):
                 f'for {chat_data[LTE][DUE]} seconds.')
     update.message.reply_text(f'Timer {chat_data[LTE][NAME]} successfully set!')    
     del chat_data[LTE]
+
 
 def timer_notif_str(timer_dict):
     """Function to build timer notification string."""
@@ -406,7 +418,7 @@ def new_timer(_bot, update, args, job_queue, chat_data):
     timer_msg = None
     if args[2:]:
         timer_msg = ' '.join(args[2:])
-    # adding info aboud event to chat data dict as 'last_timer_entry'
+    # adding info about event to chat data dict as 'last_timer_entry'
     chat_data[LTE] = dict()
     chat_data[LTE][NAME] = timer_name
     chat_data[LTE][DUE] = timer_due
@@ -437,6 +449,7 @@ def help(_bot, update):
                               '<event_name> [event_loc] [event_msg]'
                               ' - to create an new event.\n'
                               '/event to create new event using conversation'
+                              '/timer to create new timer using conversation'
                               ' handler.\n'
                               '/unset <name> to unset timer/event.')
 
@@ -452,6 +465,7 @@ def alarm(_bot, job):
 #------------------------------------------------------------------------------
 # Unset, error and unknown commands handlers.
 #------------------------------------------------------------------------------
+
 
 def unset(_bot, update, args, chat_data):
     """Remove the job if the user changed their mind.
@@ -472,12 +486,14 @@ def unset(_bot, update, args, chat_data):
     del chat_data[job_name]
     update.message.reply_text(f'{job_name} successfully unset!')
 
+
 def error(_bot, update, error):
     """Log Errors caused by Updates.
 
     :param _bot: Not used, required only by telegram-bot api.
     """
     get_logger().warning(f'Update "{update}" caused error "{error}"')
+
 
 def unknown(_bot, update):
     """Function for unknown command handler.
@@ -489,6 +505,7 @@ def unknown(_bot, update):
 #------------------------------------------------------------------------------
 # Main function for bot to be run on a computer.
 #------------------------------------------------------------------------------
+
 
 def main():
     """Main function to initialize bot, add all handlers and start listening
@@ -512,7 +529,7 @@ def main():
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('event', event, pass_chat_data=True),
-                      CommandHandler('timer',timer, pass_chat_data=True)
+                      CommandHandler('new_timer', timer, pass_chat_data=True)
                       ],
 
         states={
@@ -528,13 +545,14 @@ def main():
             TIMER_DUE: [MessageHandler(Filters.text, timer_due, pass_chat_data=True)],
             TIMER_MSG: [MessageHandler(Filters.text, timer_msg,
                                        pass_job_queue=True, pass_chat_data=True),
+
             CommandHandler('skip', skip_timer_msg,
                            pass_job_queue=True, pass_chat_data=True)]
         },
 
         fallbacks=[CommandHandler('cancel', cancel_event),
                    CommandHandler('event', event, pass_chat_data=True),
-                   CommandHandler('timer', timer, pass_chat_data=True)
+                   CommandHandler('new_timer', timer, pass_chat_data=True)
                    ]
     )
     
@@ -548,6 +566,7 @@ def main():
     # SIGABRT. This should be used most of the time, since start_polling() is
     # non-blocking and will stop the _bot gracefully.
     updater.idle()
+
 
 if __name__=='__main__':
     # Enable logging
