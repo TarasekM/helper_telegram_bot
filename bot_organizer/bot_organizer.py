@@ -35,13 +35,14 @@ def get_logger():
 
 
 def read_token(filename):
-    with open(filename,'r') as file:
+    with open(filename, 'r') as file:
         token = file.readline().strip()
         return token
 
 #------------------------------------------------------------------------------
 # Code block for the event conversation handler.
 #------------------------------------------------------------------------------
+
 
 def event(_bot, update, chat_data):
     """New event entry start function
@@ -141,6 +142,7 @@ def skip_event_msg(_bot, update, job_queue, chat_data):
     set_event(update, job_queue, chat_data)
     return ConversationHandler.END
 
+
 def event_msg(_bot, update, job_queue, chat_data):
     """Function to save event message and set up event.
 
@@ -174,20 +176,27 @@ def cancel_event(_bot, update):
 #--------------------------------------------------------------------------------
 
 
-def timer(bot, update, chat_data):
-    """New timer entry start function"""
+def timer(_bot, update, chat_data):
+    """New timer entry start function
+
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     chat_data[LTE] = {NAME: None, DUE: None,
                       MSG: None}
-    print(chat_data)
+
+    user = update.message.from_user
+    get_logger().info(f'{user.first_name} started new event entry.')
     update.message.reply_text('Ok.Let\'s create new timer!\n'
                               'Send /cancel to cancel the command.\n'
                               'Enter the name of the timer:')
     return TIMER_NAME
 
 
-def timer_name(bot, update, chat_data):
+def timer_name(_bot, update, chat_data):
     """Function to save timer name and ask for timer due
     in the timer conversation.
+
+    :param _bot: Not used, required only by telegram-bot api.
     """
     user = update.message.from_user
     chat_data[LTE][NAME] = update.message.text
@@ -197,8 +206,12 @@ def timer_name(bot, update, chat_data):
     return TIMER_DUE
 
 
-def timer_due(bot, update, chat_data):
-    """Function to save timer due and ask for timer message."""
+def timer_due(_bot, update, chat_data):
+    """Function to save timer due and ask for timer message.
+
+    :param _bot: Not used, required only by telegram-bot api.
+    """
+
     user = update.message.from_user
 
     try:
@@ -209,7 +222,7 @@ def timer_due(bot, update, chat_data):
         timer_due = int(timer_due[0]) * 3600 + int(timer_due[1]) * 60 + int(timer_due[2])
 
     except ValueError:
-        get_logger().info(f'{user.first_name}\'s {chat_data[LTE][NAME]} '
+        get_logger().error(f'{user.first_name}\'s {chat_data[LTE][NAME]} '
                     f'entered wrong due: {update.message.text}')
         update.message.reply_text('Please, enter due in the '
                                   '"HH:MI:SS" format!')
@@ -223,8 +236,12 @@ def timer_due(bot, update, chat_data):
     return TIMER_MSG
 
 
-def timer_msg(bot, update, job_queue, chat_data):
-    """Function to save timer message and set up timer."""
+def timer_msg(_bot, update, job_queue, chat_data):
+    """Function to save timer message and set up timer.
+
+    :param _bot: Not used, required only by telegram-bot api.
+    """
+
     user = update.message.from_user
     get_logger().info(f'{user.first_name}\'s message for the {chat_data[LTE][NAME]}:'
                 '\n {update.message.text}')
@@ -235,8 +252,12 @@ def timer_msg(bot, update, job_queue, chat_data):
     return ConversationHandler.END
 
 
-def skip_timer_msg(bot, update, job_queue, chat_data):
-    """Function to handle timer message skip and set up timer."""
+def skip_timer_msg(_bot, update, job_queue, chat_data):
+    """Function to handle timer message skip and set up timer.
+
+    :param _bot: Not used, required only by telegram-bot api.
+    """
+
     user = update.message.from_user
     get_logger().info(f'{user.first_name} did not send a message for the timer.')
     update.message.reply_text('Done! I wrote down all the info about the timer!')
@@ -245,8 +266,11 @@ def skip_timer_msg(bot, update, job_queue, chat_data):
     return ConversationHandler.END
 
 
-def cancel_timer(bot, update):
-    """Function to handle new timer entry cancel"""
+def cancel_timer(_bot, update):
+    """Function to handle new timer entry cancel
+
+    :param _bot: Not used, required only by telegram-bot api.
+    """
     user = update.message.from_user
     get_logger().info(f'User {user.first_name} canceled the new timer.')
     update.message.reply_text('Ok, I canceled the new timer entry!')
