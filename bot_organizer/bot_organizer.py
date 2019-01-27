@@ -1,3 +1,17 @@
+# Licenced under MIT license
+# So you can use it as you want, but no warranty from us ;)
+
+"""
+This is a rather simple bot for popular messenger Telegram.
+It provides some simple functionality for timers and events set
+and uses telegram-python-api for communicating with user in Telegram.
+
+Main purpose of the bot was to learn telegram-python-api, how to use git,
+write tests in pytest, use travis and generate docs with sphinx.
+
+Writen by Artemii Hrynevych and Mateusz Tarasek.
+"""
+
 import logging
 from datetime import datetime
 from telegram import (ReplyKeyboardMarkup, ReplyKeyboardRemove)
@@ -31,10 +45,18 @@ start_markup = ReplyKeyboardMarkup(start_reply_keyboard, one_time_keyboard=False
 
 
 def get_logger():
+    """ 
+    Function to get logger instance. Since loggers are hashed it actually
+    is pretty fast and doesn't consume a lot of memory.
+    Also it makes logging easier for testing, since we can patch get_logger
+    """
     return logging.getLogger(__name__)
 
 
 def read_token(filename):
+    """
+    Very simple function to get token for your bot from a file
+    """
     with open(filename, 'r') as file:
         token = file.readline().strip()
         return token
@@ -45,9 +67,14 @@ def read_token(filename):
 
 
 def event(_bot, update, chat_data):
-    """New event entry start function
+    """
+    New event entry start function
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: EVENT_NAME token for conversation handler to move on.
     """
     chat_data[LEE] = {NAME: None, DATE: None,
                       LOC: None, MSG: None}
@@ -61,11 +88,15 @@ def event(_bot, update, chat_data):
 
 
 def event_name(_bot, update, chat_data):
-    """Function to save event name and ask for event date
+    """
+    Function to save event name and ask for event date
     in the event conversation.
 
-
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: EVENT_DATE token for conversation handler to move on.
     """
     user = update.message.from_user
     chat_data[LEE][NAME] = update.message.text
@@ -77,9 +108,15 @@ def event_name(_bot, update, chat_data):
 
 
 def event_date(_bot, update, chat_data):
-    """Function to save event date and ask for event location.
+    """
+    Function to save event date and ask for event location.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: EVENT_DATE token if data was not correct.
+    :return: EVENT_LOC token for conversation handler to move on.
     """
     user = update.message.from_user
 
@@ -104,9 +141,13 @@ def event_date(_bot, update, chat_data):
 
 
 def skip_event_loc(_bot, update):
-    """Function to handle event location skip
+    """
+    Function to handle event location skip
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+
+    :return: EVENT_MSG token for conversation handler to move on.
     """
     user = update.message.from_user
     get_logger().info(f'{user.first_name} did not send a location of the event.')
@@ -119,6 +160,10 @@ def event_loc(_bot, update, chat_data):
     """Function to save event location and ask for event message.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: EVENT_MSG token for conversation handler to move on.
     """
     user = update.message.from_user
     get_logger().info(f'{user.first_name}\'s location of the {chat_data[LEE][NAME]}:'
@@ -131,9 +176,14 @@ def event_loc(_bot, update, chat_data):
 
 
 def skip_event_msg(_bot, update, job_queue, chat_data):
-    """Function to handle event message skip and set up event.
+    """
+    Function to handle event message skip and set up event.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param job_queue: queue of jobs for invoking functions after some time.
+
+    :return: ConversationHandler.END token to end the conversation.
     """
     user = update.message.from_user
     get_logger().info(f'{user.first_name} did not send a message for the event.')
@@ -144,9 +194,15 @@ def skip_event_msg(_bot, update, job_queue, chat_data):
 
 
 def event_msg(_bot, update, job_queue, chat_data):
-    """Function to save event message and set up event.
+    """
+    Function to save event message and set up event.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param job_queue: queue of jobs for invoking functions after some time.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: ConversationHandler.END token to end the conversation.
     """
     user = update.message.from_user
     get_logger().info(f'{user.first_name}\'s message for the {chat_data[LEE][NAME]}:'
@@ -159,9 +215,13 @@ def event_msg(_bot, update, job_queue, chat_data):
 
 
 def cancel_event(_bot, update):
-    """Function to handle new event entry cancel
+    """
+    Function to handle new event entry cancel
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+
+    :return: ConversationHandler.END token to end the conversation.    
     """
     user = update.message.from_user
     get_logger().info(f'User {user.first_name} canceled the new event.')
@@ -177,9 +237,14 @@ def cancel_event(_bot, update):
 
 
 def timer(_bot, update, chat_data):
-    """New timer entry start function
+    """
+    New timer entry start function
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: TIMER_NAME token for conversation handler to move on.
     """
     chat_data[LTE] = {NAME: None, DUE: None,
                       MSG: None}
@@ -193,10 +258,15 @@ def timer(_bot, update, chat_data):
 
 
 def timer_name(_bot, update, chat_data):
-    """Function to save timer name and ask for timer due
+    """
+    Function to save timer name and ask for timer due
     in the timer conversation.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: TIMER_DUE token for conversation handler to move on.
     """
     user = update.message.from_user
     chat_data[LTE][NAME] = update.message.text
@@ -210,26 +280,31 @@ def timer_due(_bot, update, chat_data):
     """Function to save timer due and ask for timer message.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param chat_data: Dict that contains chat specific data.
+
+    :return: TIMER_DUE token if due was not correct to get timer due again.
+    :return: TIMER_MSG token if due was ok for conversation handler to move on.
     """
 
     user = update.message.from_user
 
     try:
 
-        timer_due = update.message.text.strip().split(":")
-        if len(timer_due) != 3:
+        _due = update.message.text.strip().split(":")
+        if len(_due) != 3:
             raise ValueError
-        timer_due = int(timer_due[0]) * 3600 + int(timer_due[1]) * 60 + int(timer_due[2])
+        _due = int(_due[0]) * 3600 + int(_due[1]) * 60 + int(_due[2])
 
     except ValueError:
         get_logger().error(f'{user.first_name}\'s {chat_data[LTE][NAME]} '
                     f'entered wrong due: {update.message.text}')
         update.message.reply_text('Please, enter due in the '
                                   '"HH:MI:SS" format!')
-        return TIMER_MSG
+        return TIMER_DUE
 
-    chat_data[LTE][DUE] = timer_due
-    get_logger().info(f'{user.first_name}\'s {chat_data[LTE][NAME]} due: {timer_due}')
+    chat_data[LTE][DUE] = _due
+    get_logger().info(f'{user.first_name}\'s {chat_data[LTE][NAME]} due: {_due}')
     update.message.reply_text('Done! Now send me the message you want me to send you'
                               'as a reminder for the event or /skip:\n')
 
@@ -237,9 +312,16 @@ def timer_due(_bot, update, chat_data):
 
 
 def timer_msg(_bot, update, job_queue, chat_data):
-    """Function to save timer message and set up timer.
+    """
+    Function to save timer message and set up timer.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param job_queue: queue of jobs for invoking functions after some time.
+    :param chat_data: Dict that contains chat specific data.
+
+
+    :return: ConversationHandler.END token to end the conversation.
     """
 
     user = update.message.from_user
@@ -253,9 +335,16 @@ def timer_msg(_bot, update, job_queue, chat_data):
 
 
 def skip_timer_msg(_bot, update, job_queue, chat_data):
-    """Function to handle timer message skip and set up timer.
+    """
+    Function to handle timer message skip and set up timer.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param job_queue: queue of jobs for invoking functions after some time.
+    :param chat_data: Dict that contains chat specific data.
+
+
+    :return: ConversationHandler.END token to end the conversation.
     """
 
     user = update.message.from_user
@@ -270,6 +359,9 @@ def cancel_timer(_bot, update):
     """Function to handle new timer entry cancel
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+
+    :return: ConversationHandler.END token to end the conversation.
     """
     user = update.message.from_user
     get_logger().info(f'User {user.first_name} canceled the new timer.')
@@ -286,7 +378,13 @@ def cancel_timer(_bot, update):
 
 
 def set_event(update, job_queue, chat_data):
-    """Function to set up event notification job."""
+    """
+    Function to set up event notification job.
+    
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param job_queue: queue of jobs for invoking functions after some time.
+    :param chat_data: Dict that contains chat specific data.
+    """
     event_name = chat_data[LEE][NAME]
     event_job_name = event_name+JOB_STR_END
     user = update.message.from_user
@@ -315,7 +413,13 @@ def set_event(update, job_queue, chat_data):
     del chat_data[LEE]
             
 def event_notif_str(event_dict):
-    """Function to build event notification string."""
+    """
+    Function to build event notification string.
+    
+    :param event_dict: dict that contains name, date, loc and msg for event.
+
+    :return: notification string.
+    """
     notif = ''.join(('Event: ', event_dict[NAME]))
     notif = ''.join((notif, '\nDate: ',
                      event_dict[DATE].strftime(DATE_TIME_FORMAT)))
@@ -331,9 +435,14 @@ def event_notif_str(event_dict):
 
 
 def new_event(_bot, update, args, job_queue, chat_data):
-    """Add a job with notification for the new event to the queue.
+    """
+    Handler for one message event set.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param args: Arguments for new event (name, date, loc, msg)
+    :param job_queue: Queue of jobs for invoking functions after some time.
+    :param chat_data: Dict that contains chat specific data.
     """
     # check mandatory arguments: event_date and event_name
     user = update.message.from_user
@@ -377,7 +486,13 @@ def new_event(_bot, update, args, job_queue, chat_data):
 
 
 def set_timer(update, job_queue, chat_data):
-    """Function to set up new timer notification job."""
+    """
+    Function to set up new timer notification job.
+    
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param job_queue: queue of jobs for invoking functions after some time.
+    :param chat_data: Dict that contains chat specific data.
+    """
     timer_name = chat_data[LTE][NAME]
     timer_job_name = timer_name+JOB_STR_END
     user = update.message.from_user
@@ -402,7 +517,12 @@ def set_timer(update, job_queue, chat_data):
 
 
 def timer_notif_str(timer_dict):
-    """Function to build timer notification string."""
+    """
+    Function to build timer notification string.
+    
+    :param timer_dict: dict with name and message for timer.
+    :return: notification string.
+    """
     notif = ''.join(('Timer: ', timer_dict[NAME]))
     if timer_dict[MSG] is not None:
         notif = ''.join((notif, '\nMessage: ', timer_dict[MSG]))
@@ -413,9 +533,14 @@ def timer_notif_str(timer_dict):
 #------------------------------------------------------------------------------
 
 def new_timer(_bot, update, args, job_queue, chat_data):
-    """Add a job with notification for the new timer to the queue.
+    """
+    Handler for one line timer set.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param args: Arguments for new timer (name, due, msg)
+    :param job_queue: queue of jobs for invoking functions after some time.
+    :param chat_data: Dict that contains chat specific data.
     """
     user = update.message.from_user
 
@@ -454,17 +579,22 @@ def new_timer(_bot, update, args, job_queue, chat_data):
 #------------------------------------------------------------------------------
 
 def start(_bot, update):
-    """Function for start command handler.
+    """
+    Function for start command handler.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
     """
     update.message.reply_text('Hi! I\'m organizer helper bot!\n'
                               'Write /help to see all available commands.',
                               reply_markup=start_markup)
+
 def help(_bot, update):
-    """Function for help command handler.
+    """
+    Function for help command handler.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
     """
     update.message.reply_text('Currently you can use only:\n'
                               '/new_timer <seconds> [timer_name] [timer_message]'
@@ -478,14 +608,18 @@ def help(_bot, update):
                               ' handler.\n'
                               '/unset <name> to unset timer/event.')
 
-def alarm(_bot, job):
-    """Function to send alarm notification message to the user
+def alarm(bot, job):
+    """
+    Function to send alarm notification message to the user
     who set up the event or timer.
+
+    :param bot: bot object will send the message from the job.
+    :param job: job object contains the chat_id and message in job.context.
     """
     chat_id = job.context[0]
     # job_event_name = job.context[1]
     job_message = job.context[2]
-    _bot.send_message(chat_id, text=job_message)
+    bot.send_message(chat_id, text=job_message)
 
 #------------------------------------------------------------------------------
 # Unset, error and unknown commands handlers.
@@ -493,9 +627,13 @@ def alarm(_bot, job):
 
 
 def unset(_bot, update, args, chat_data):
-    """Remove the job if the user changed their mind.
+    """
+    Remove the job if the user changed their mind.
     
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param args: Message as a list. Should contain job name to unset.
+    :param chat_data: Dict that contains chat specific data.
     """
     try:
         job_name = ''.join((args[0], JOB_STR_END))
@@ -513,17 +651,22 @@ def unset(_bot, update, args, chat_data):
 
 
 def error(_bot, update, error):
-    """Log Errors caused by Updates.
+    """
+    Log Errors caused by Updates.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: Contains event data, such as user_id, chat_id, text sent.
+    :param error: error which caused invocation of this function.
     """
     get_logger().warning(f'Update "{update}" caused error "{error}"')
 
 
 def unknown(_bot, update):
-    """Function for unknown command handler.
+    """
+    Function for unknown command handler.
 
     :param _bot: Not used, required only by telegram-bot api.
+    :param update: update which triggered this handler.
     """
     update.message.reply_text('Sorry, I didn\'t understand that command.')
 
@@ -533,7 +676,8 @@ def unknown(_bot, update):
 
 
 def main():
-    """Main function to initialize bot, add all handlers and start listening
+    """
+    Main function to initialize bot, add all handlers and start listening
     to the user's input.
     """
     updater = Updater(read_token(TOKEN_FILENAME))

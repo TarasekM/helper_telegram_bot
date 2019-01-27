@@ -1,4 +1,6 @@
-# SiNWO_projekt
+# README
+
+## SiNWO_projekt
 Artemii Hrynevych, Mariusz Poręba, Mateusz Tarasek.
 Projekt na **Środowiska i Narzędzia  Wytwarzania Oprogramowania**: 'Helper orginizer bot' dla Telegrama.
 
@@ -7,7 +9,7 @@ organizacja wydarzeń/spotkań za pomocą wysłania wiadomości w Telegramie ora
 
 ___
 
-# Project for Systems and Tools for Software Development
+## Project for Systems and Tools for Software Development
 
 Artemii Hrynevych, Mariusz Poręba, Mateusz Tarasek.
 Project for **Systems and Tools for Software Development**: 'Helper orginizer bot' for Telegram.

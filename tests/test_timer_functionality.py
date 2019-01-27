@@ -29,7 +29,7 @@ class TestTimerHandlers:
                                   timer_chat_data, get_logger):
 
         return_val = bo.timer_due(bot, bad_due_update, timer_chat_data)
-        assert return_val == bo.TIMER_MSG
+        assert return_val == bo.TIMER_DUE
         assert bo.DUE not in timer_chat_data[bo.LTE].keys()
         get_logger.error.assert_called_once()
         assert bad_due_update.message.reply_text.call_count == 1
