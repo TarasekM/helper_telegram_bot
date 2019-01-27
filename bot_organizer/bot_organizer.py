@@ -277,7 +277,8 @@ def timer_name(_bot, update, chat_data):
 
 
 def timer_due(_bot, update, chat_data):
-    """Function to save timer due and ask for timer message.
+    """
+    Function to save timer due and ask for timer message.
 
     :param _bot: Not used, required only by telegram-bot api.
     :param update: Contains event data, such as user_id, chat_id, text sent.
