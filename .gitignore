@@ -1,5 +1,12 @@
+*.swp
 bot_env
 env
 .ipynb_checkpoints
 TOKEN.txt
 __pycache__
+test.py
+.vscode/**
+.pytest_cache
+*.pyc
+docs/_build/**
+docs/_templates/**
